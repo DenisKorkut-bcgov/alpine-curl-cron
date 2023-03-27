@@ -6,4 +6,4 @@ ADD *.sh /
 RUN chmod +x /*.sh
 RUN echo "1 * * * * /curl.sh" >> /var/spool/cron/crontabs/root
 
-ENTRYPOINT ["sh","crond -f -l 1 -L /dev/stdout"]
+ENTRYPOINT ["crond -f -l 1 -L /dev/stdout"]
