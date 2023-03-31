@@ -2,4 +2,4 @@
 set -e
 
 echo "$(date) - Start"
-curl $CURL_URL
+curl --insecure https://${WP_HOST}/wp-json/wpch/v1/cron

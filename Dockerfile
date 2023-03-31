@@ -1,12 +1,42 @@
-FROM alpine:latest
+FROM alpine:3.17
 
 RUN apk --no-cache add curl
 
+# Change timezone to PST for convenience
+ENV TZ=America/Vancouver
+
+# Set the workdir to be root
+WORKDIR /
+
+# ========================================================================================================
+# Install go-crond (from https://github.com/webdevops/go-crond)
+#
+# CRON Jobs in OpenShift:
+#  - https://blog.danman.eu/cron-jobs-in-openshift/
+# --------------------------------------------------------------------------------------------------------
+ARG SOURCE_REPO=webdevops
+ARG GOCROND_VERSION=23.2.0
+ADD https://github.com/$SOURCE_REPO/go-crond/releases/download/$GOCROND_VERSION/go-crond.linux.amd64 /usr/bin/go-crond
+
+USER root
+
+RUN chmod +x /usr/bin/go-crond
+# ========================================================================================================
+
+
+# ========================================================================================================
+# Perform operations that require root privilages here ...
+# --------------------------------------------------------------------------------------------------------
+RUN echo $TZ > /etc/timezone
+# ========================================================================================================
+
 ADD *.sh /
 RUN chmod +x /*.sh
-RUN touch /var/spool/cron/crontabs/curl
-RUN echo "* * * * * /bin/sh ./curl.sh" >> /var/spool/cron/crontabs/curl
-RUN chmod a+r /var/spool/cron/crontabs/root
-RUN chmod a+r /var/spool/cron/crontabs/curl
+RUN echo "* * * * * ./curl.sh" >> /etc/crontabs/curl
+RUN chmod -R gu+r /etc/crontabs
 
-CMD crond -f -l 1
+RUN echo go-crond -h
+
+# Important - Reset to the base image's user account.
+USER 26
+CMD go-crond -v --allow-unprivileged --auto
